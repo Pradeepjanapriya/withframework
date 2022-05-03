@@ -1,0 +1,34 @@
+name: Gradle Build
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest]
+        java: [ '16.0.2' ]
+      fail-fast: false
+    name: ${{ matrix.os }}
+    steps:
+    - name: Git checkout
+      uses: actions/checkout@v2
+    - name: Set up JDK
+      uses: actions/setup-java@v1
+      with:
+        java-version: ${{ matrix.java }}
+    - name: Echo JAVA_HOME
+      run: echo $JAVA_HOME
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v2
+    - name: Verify Gradle Wrapper
+      uses: gradle/wrapper-validation-action@v1
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+    - name: Execute Test
+      run: ./gradlew --info --stacktrace test
+    - uses: actions/upload-artifact@v3
+      with:
+        name: my-artifact
+        path: hello/build/lib/main/debug
