@@ -31,4 +31,6 @@ jobs:
     - uses: actions/upload-artifact@v3
       with:
         name: my-artifact
-        path: hello/build/lib/main/debug
+        path: |
+              hello/build/lib/main/debug
+              Qt/5.15.2/msvc2019_64/bin
