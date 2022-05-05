@@ -31,4 +31,4 @@ jobs:
     - uses: actions/upload-artifact@v3
       with:
         name: my-artifact
-        path: D:\a\withframework\Qt\5.15.2\msvc2019_64\bin
+        path: $GITHUB_WORKSPACE/withframework/Qt/5.12.9/msvc2019_64/bin
