@@ -20,6 +20,10 @@ jobs:
         java-version: ${{ matrix.java }}
     - name: Echo JAVA_HOME
       run: echo $JAVA_HOME
+    - uses: actions/upload-artifact@v3
+      with:
+        name: my-artifact
+        path: $GITHUB_WORKSPACE/example/Qt/5.12.9/msvc2019_64/bin
     - name: Install Qt
       uses: jurplel/install-qt-action@v2
     - name: Verify Gradle Wrapper
@@ -28,7 +32,3 @@ jobs:
       run: chmod +x gradlew
     - name: Execute Test
       run: ./gradlew --info --stacktrace test
-    - uses: actions/upload-artifact@v3
-      with:
-        name: my-artifact
-        path: $GITHUB_WORKSPACE/withframework/Qt/5.12.9/msvc2019_64/bin
