@@ -1,41 +1,47 @@
 import org.gradle.internal.jvm.Jvm
 
 plugins {
-    id 'cpp-library'
-    id 'org.platops.gradle.plugins.qt.gradle-qt-plugin' version '1.0.4'
+  id 'idea'
+  id 'cpp-library'
+  id 'org.platops.gradle.plugins.qt.gradle-qt-plugin' version '1.0.4'
 }
 
 model {
-    buildTypes {
-        debug
-        release
-    }
+  buildTypes {
+    debug
+    release
+  }
 }
 
 qt {
-    modules = [
-            'QtCore',
-            'QtGui',
-    ]
+  modules = [
+      'QtCore',
+  ]
 
-    deployParameters = [
-            windows: [
-                    '--no-system-d3d-compiler',
-                    '--no-webkit2',
-            ],
-            macos: [
-                    '-no-strip'
-            ]
+  deployParameters = [
+    windows: [
+      '--no-system-d3d-compiler',
+      '--no-webkit2',
+    ],
+    macos: [
+      '-no-strip'
     ]
+  ]
 }
+
 
 library {
 
-    binaries.configureEach { CppBinary binary ->
-        def compileTask = binary.compileTask.get()
+  source.from file('src/main/cpp')
+  privateHeaders.from file('src/main/headers')
+
+  binaries.configureEach { CppBinary cppBinary ->
+    CppCompile compileTask = cppBinary.compileTask.get()
+    AbstractLinkTask linkTask = cppBinary.linkTask.get()
+
         compileTask.includes.from("${Jvm.current().javaHome}/include")
 
-        def osFamily = binary.targetPlatform.targetMachine.operatingSystemFamily
+        def osFamily = cppBinary.targetPlatform.targetMachine.operatingSystemFamily
         if (osFamily.macOs) {
             compileTask.includes.from("${Jvm.current().javaHome}/include/darwin")
         } else if (osFamily.linux) {
@@ -44,23 +50,30 @@ library {
             compileTask.includes.from("${Jvm.current().javaHome}/include/win32")
         }
 
-        compileTask.source.from fileTree(dir: "src/main/cpp", include: "**/*.cpp")
-
-        def toolChain = binary.toolChain
-        if (toolChain instanceof VisualCpp) {
-            compileTask.compilerArgs.addAll(["/TP"])
-        } else if (compileTask.targetPlatform.get().operatingSystem.isMacOsX()) {
-            compileTask.compilerArgs.add('-std=gnu++11')
-        }
-
-        def linkTask = binary.linkTask.get()
-        linkTask.linkerArgs.addAll(linkTask.targetPlatform.map {
-            if (it.operatingSystem.isWindows()) {
-                return ['user32.lib', 'ole32.lib','shell32.lib','pdh.lib']
-            }
-            return []
-        })
 
 
+    compileTask.positionIndependentCode = true
+
+    if (compileTask.targetPlatform.get().operatingSystem.isMacOsX()) {
+      compileTask.compilerArgs.add('-std=gnu++11')
     }
+    if (compileTask.targetPlatform.get().operatingSystem.isWindows()) {
+      compileTask.compilerArgs.add("/MD${compileTask.name.toLowerCase().contains('debug') ? 'd' : ''}")
+      linkTask.linkerArgs.add("msvcrt${linkTask.name.toLowerCase().contains('debug') ? 'd' : ''}.lib")
+      linkTask.linkerArgs.addAll(['user32.lib', 'ole32.lib','shell32.lib','pdh.lib','windowscodecs.lib'])
+      linkTask.linkerArgs.addAll(['/SUBSYSTEM:windows', '/ENTRY:mainCRTStartup'])
+    }
+
+    if (compileTask.name.toLowerCase().contains('debug')) {
+      compileTask.macros.put('_DEBUG', null)
+      compileTask.optimized = false
+      compileTask.debuggable = true
+    } else {
+      compileTask.macros.put('NDEBUG', null)
+      compileTask.optimized = true
+      compileTask.debuggable = false
+    }
+
+    linkTask.debuggable = linkTask.name.toLowerCase().contains('debug')
+  }
 }
