@@ -59,9 +59,7 @@ library {
     }
     if (compileTask.targetPlatform.get().operatingSystem.isWindows()) {
       compileTask.compilerArgs.add("/MD${compileTask.name.toLowerCase().contains('debug') ? 'd' : ''}")
-      linkTask.linkerArgs.add("msvcrt${linkTask.name.toLowerCase().contains('debug') ? 'd' : ''}.lib")
       linkTask.linkerArgs.addAll(['user32.lib', 'ole32.lib','shell32.lib','pdh.lib','windowscodecs.lib'])
-      linkTask.linkerArgs.addAll(['/SUBSYSTEM:windows', '/ENTRY:mainCRTStartup'])
     }
 
     if (compileTask.name.toLowerCase().contains('debug')) {
